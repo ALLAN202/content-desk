@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0D0D0D">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Content Desk">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>ChuoLink Content Desk</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout concept: one column phone app. Header band, one scrolling list per tab, fixed bottom tab bar.
+   Palette is ChuoLink brand: black, cream, yellow. Status colours are separate from the accent. */
+:root{
+  --bg:#F9F6E0; --surface:#FFFFFF; --ink:#0D0D0D; --muted:#5E5B48; --line:#E2DCB4;
+  --accent:#FFDE69; --accent-deep:#F4C644; --on-accent:#0D0D0D;
+  --chart:#8A6400; --chart-hi:#5E4300;
+  --head-bg:#0D0D0D; --head-ink:#F9F6E0;
+  --good:#17623C; --good-bg:#DCF0E3; --mid:#7A5200; --mid-bg:#FBEBB8;
+  --bad:#9B2219; --bad-bg:#F8DAD5; --learn:#4A4838; --learn-bg:#ECE8CC;
+  --font-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --chart:#FFDE69; --chart-hi:#FFF0B3;
+    --bg:#0D0D0D; --surface:#171617; --ink:#F9F6E0; --muted:#ABA78E; --line:#2C2A2B;
+    --head-bg:#131213; --head-ink:#F9F6E0;
+    --good:#7ED6A3; --good-bg:#10291C; --mid:#FFD27A; --mid-bg:#33260A;
+    --bad:#FF9288; --bad-bg:#37130F; --learn:#C9C5AC; --learn-bg:#252322;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --chart:#FFDE69; --chart-hi:#FFF0B3;
+  --bg:#0D0D0D; --surface:#171617; --ink:#F9F6E0; --muted:#ABA78E; --line:#2C2A2B;
+  --head-bg:#131213; --head-ink:#F9F6E0;
+  --good:#7ED6A3; --good-bg:#10291C; --mid:#FFD27A; --mid-bg:#33260A;
+  --bad:#FF9288; --bad-bg:#37130F; --learn:#C9C5AC; --learn-bg:#252322;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px}
+.app{max-width:640px;margin:0 auto}
+header{background:var(--head-bg);color:var(--head-ink);margin-left:calc(-1 * max(16px,env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));
+  padding:18px max(16px,env(safe-area-inset-left,0px)) 16px max(16px,env(safe-area-inset-left,0px));border-bottom:4px solid var(--accent)}
+header .brand{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700}
+header h1{font-family:var(--font-display);font-size:28px;line-height:1.1;margin:4px 0 2px;font-weight:800;text-wrap:balance}
+header .date{font-size:13px;color:var(--head-ink);opacity:.8}
+main{padding-top:18px;display:flex;flex-direction:column;gap:18px}
+h2{font-family:var(--font-display);font-size:18px;margin:0;font-weight:700}
+.sec{display:flex;flex-direction:column;gap:10px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.sec-h .n{font-size:13px;color:var(--muted)}
+.strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.strip div{background:var(--surface);border:1px solid var(--line);padding:10px 8px;border-radius:6px;text-align:center}
+.strip b{display:block;font-family:var(--font-display);font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+.strip span{font-size:12px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card.overdue{border-color:var(--bad)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;min-width:0}
+.when{font-size:13px;font-weight:700;color:var(--muted)}
+.when.late{color:var(--bad)}
+.chip{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--learn-bg);color:var(--learn);font-weight:500}
+.chip.plat{background:var(--accent);color:var(--on-accent);font-weight:700}
+.hook{font-size:16px;font-weight:700;line-height:1.35;overflow-wrap:anywhere}
+.small{font-size:13px;color:var(--muted)}
+.code{font-family:var(--font-mono);font-size:13px;background:var(--bg);border:1px solid var(--line);padding:3px 8px;border-radius:4px;overflow-wrap:anywhere}
+button{font:inherit;cursor:pointer;border-radius:6px;min-height:44px;padding:8px 14px;border:1px solid var(--ink);background:transparent;color:var(--ink);font-weight:700}
+button.primary{background:var(--accent);border-color:var(--accent-deep);color:var(--on-accent)}
+button.ghost{border-color:var(--line);font-weight:500;color:var(--muted)}
+button.small-btn{min-height:36px;padding:4px 10px;font-size:13px}
+button.danger{border-color:var(--bad);color:var(--bad)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent-deep);outline-offset:2px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions .primary{flex:1 1 150px}
+label{font-size:13px;font-weight:700;display:block;margin-bottom:4px}
+input,select,textarea{font:inherit;width:100%;min-height:44px;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+textarea{min-height:84px;resize:vertical}
+.field{display:flex;flex-direction:column;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.hint{font-size:12px;color:var(--muted);margin-top:3px}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:12px;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+legend{font-family:var(--font-display);font-weight:700;padding:0 6px}
+.pill{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:99px}
+.pill.good{background:var(--good-bg);color:var(--good)}
+.pill.ok,.pill.mid{background:var(--mid-bg);color:var(--mid)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.pill.learn{background:var(--learn-bg);color:var(--learn)}
+.verdict{border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);background:var(--surface)}
+.verdict.good{border-color:var(--good)}.verdict.bad{border-color:var(--bad)}.verdict.ok,.verdict.mid{border-color:var(--mid)}
+.verdict h3{margin:0;font-family:var(--font-display);font-size:20px}
+.verdict ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.cmp{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.cmp td,.cmp th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.cmp th{font-size:12px;color:var(--muted);font-weight:700}
+.scroll{overflow-x:auto}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.empty p{margin:0}
+.banner{background:var(--mid-bg);color:var(--mid);padding:10px 12px;border-radius:6px;font-size:13px}
+.ideas{display:flex;flex-wrap:wrap;gap:6px}
+.ideas button{min-height:36px;font-weight:500;font-size:13px;padding:4px 10px;border-color:var(--line);text-align:left}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--head-bg);display:grid;grid-template-columns:repeat(4,1fr);
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));border-top:3px solid var(--accent);z-index:20}
+nav button{border:0;border-radius:6px;color:var(--head-ink);opacity:.75;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:500;position:relative;min-height:52px;padding:4px 2px}
+nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav button.on{opacity:1;background:var(--accent);color:var(--on-accent);font-weight:700}
+nav .badge{position:absolute;top:2px;right:18%;background:var(--bad);color:#fff;font-size:11px;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;font-weight:700}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:6px;font-size:14px;z-index:30;max-width:calc(100% - 32px);opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip-btn{min-height:36px;padding:4px 12px;font-size:13px;font-weight:500;border-color:var(--line);border-radius:99px}
+.chip-btn.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
+.chartcard{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.chartcard h3{margin:0;font-family:var(--font-display);font-size:16px}
+.chartcard p{margin:0;font-size:13px;color:var(--muted)}
+.chartcard svg{width:100%;max-width:520px;height:auto;display:block;overflow:visible}
+svg text{font-family:var(--font-body);fill:var(--ink)}
+svg text.ax{fill:var(--muted);font-size:11px}
+svg text.val{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+svg .bar{fill:var(--chart)}
+svg .brow:hover .bar,svg .brow:focus-within .bar{fill:var(--chart-hi)}
+svg .hit{fill:transparent;cursor:pointer}
+svg .hit:focus{outline:none;stroke:var(--chart);stroke-width:2}
+svg .gridl{stroke:var(--line);stroke-width:1}
+svg .line{fill:none;stroke:var(--chart);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+svg .dot{fill:var(--chart);stroke:var(--surface);stroke-width:2}
+#tip{position:fixed;z-index:40;background:var(--ink);color:var(--bg);padding:8px 10px;border-radius:6px;font-size:13px;pointer-events:none;opacity:0;max-width:240px;left:0;top:0}
+#tip.show{opacity:1}
+#tip b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
+details.cap{border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+details.cap summary{cursor:pointer;font-weight:700;min-height:28px}
+.captext{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0;font-size:14px}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">ChuoLink</div>
+    <h1>Content Desk</h1>
+    <div class="date" id="today"></div>
+  </header>
+  <main id="main"></main>
+</div>
+<nav id="nav" aria-label="Sections"></nav>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const PLATFORMS=[['Instagram','IG'],['TikTok','TT'],['Facebook','FB'],['WhatsApp','WA'],['LinkedIn','LI'],['YouTube','YT']];
+const PILLARS=[['Proof','PR'],['Pathways','PW'],['Process','PC'],['Trust','TR'],['Engage','EN'],['Offer','OF']];
+const FORMATS=['Short video','Carousel','Single image','Story or Status','Live','Long video','Text post','Poll'];
+const CTAS=['Book a free consultation','WhatsApp us','Visit chuolink.com','Comment a keyword','Share or tag a friend','Download the guide','Visit our office'];
+const IDEAS={
+  Proof:['Student departure story, from admission letter to the airport','A student tells us why they chose to study abroad'],
+  Pathways:['Studying in India: what Tanzanian students should know','Three countries Tanzanian students choose and why'],
+  Process:['Documents checklist for your university application','How your NECTA results are used for placement'],
+  Trust:['We are TCU licensed and registered with BRELA. Meet the team','Inside the ChuoLink office at Victoria House'],
+  Engage:['Poll: which country would you study in?','Myth or fact: you need an agent to apply'],
+  Offer:['Intake is open: book your free consultation','Only a few consultation slots left this week']
+};
+const MIN_BASE=3;
+const LS='chuolink_content_desk_posts';
+const S={tab:'post',posts:[],mode:'loading',detail:null,res:{},confirmDel:null,pending:false,measure:'rate',gen:{busy:false,err:'',got:false},
+  draft:{date:'',platform:'Instagram',pillar:'Proof',format:'Short video',hook:'',cta:'Book a free consultation',tone:'Friendly',lang:'English',caption:''}};
+let sampleFn=null;
+(async()=>{try{if(window.claude&&window.claude.use)sampleFn=await window.claude.use('sample')}catch(e){}requestRender()})();
+let coll=null;
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayISO=()=>iso(new Date());
+const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const fmtDate=s=>s?parse(s).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'';
+const daysBetween=(a,b)=>Math.round((parse(b)-parse(a))/86400000);
+const pct=x=>x==null?'n/a':(x*100).toFixed(1)+'%';
+const num=x=>Math.round(x).toLocaleString('en-US');
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2600)}
+function pcode(p){return(PLATFORMS.find(x=>x[0]===p)||['','XX'])[1]}
+function plcode(p){return(PILLARS.find(x=>x[0]===p)||['','XX'])[1]}
+function makeCode(d,excludeId){
+  const base=pcode(d.platform)+'_'+d.date.slice(2,4)+d.date.slice(5,7)+d.date.slice(8,10)+'_'+plcode(d.pillar);
+  const used=S.posts.filter(p=>p.id!==excludeId).map(p=>p.code);
+  if(!used.includes(base))return base;
+  for(let i=1;i<26;i++){const c=base+'_'+String.fromCharCode(65+i);if(!used.includes(c))return c}
+  return base+'_'+Date.now().toString(36);
+}
+function copyText(t){
+  const fallback=()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();toast(ok?'Copied':'Press and hold the text to copy')};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>toast('Copied'),fallback)}else fallback();
+}
+
+/* ---------- storage ---------- */
+function lsLoad(){try{return JSON.parse(localStorage.getItem(LS)||'[]')}catch(e){return[]}}
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify(S.posts))}catch(e){}}
+const storeReady=(async()=>{
+  let db=null;
+  try{if(window.claude&&window.claude.use)db=await window.claude.use('db')}catch(e){}
+  if(db){
+    coll=db.collection('posts');S.mode='cloud';
+    coll.onSnapshot(snap=>{S.posts=snap.docs.map(d=>Object.assign({},d.data(),{id:d.id}));requestRender()},
+      err=>{S.mode='local';S.posts=lsLoad();requestRender()});
+  }else{S.mode='local';S.posts=lsLoad()}
+  requestRender();
+})();
+async function savePost(p){
+  await storeReady;
+  if(S.mode==='cloud'){
+    try{await coll.doc(p.id).set(p);return true}
+    catch(e){toast('Could not save. Check your connection and access.');return false}
+  }
+  const i=S.posts.findIndex(x=>x.id===p.id);if(i<0)S.posts.push(p);else S.posts[i]=p;lsSave();return true;
+}
+async function removePost(id){
+  await storeReady;
+  if(S.mode==='cloud'){try{await coll.doc(id).delete();return true}catch(e){toast('Could not delete.');return false}}
+  S.posts=S.posts.filter(p=>p.id!==id);lsSave();return true;
+}
+
+/* ---------- scoring ---------- */
+function metrics(r){
+  const n=k=>Math.max(0,parseInt(r[k])||0);
+  const m={reach:n('reach'),likes:n('likes'),comments:n('comments'),shares:n('shares'),saves:n('saves'),clicks:n('clicks'),enq:n('enq'),leads:n('leads'),paid:n('paid')};
+  m.inter=m.likes+m.comments+m.shares+m.saves;
+  m.eng=m.reach?m.inter/m.reach:null;m.click=m.reach?m.clicks/m.reach:null;m.enqRate=m.reach?m.enq/m.reach:null;
+  return m;
+}
+function baseline(p){
+  const o=S.posts.filter(x=>x.id!==p.id&&x.platform===p.platform&&x.results&&metrics(x.results).reach>0).map(x=>metrics(x.results));
+  if(o.length<MIN_BASE)return{ok:false,n:o.length};
+  const avg=k=>o.reduce((a,m)=>a+m[k],0)/o.length;
+  return{ok:true,n:o.length,reach:avg('reach'),eng:avg('eng'),click:avg('click'),enqRate:avg('enqRate')};
+}
+function verdict(p){
+  const m=metrics(p.results),b=baseline(p),A=[];
+  if(!m.reach)return{tone:'learn',label:'Add the reach number',summary:'Enter the reach from the platform insights so this post can be scored.',actions:[],m,b};
+  const reachHi=b.ok&&m.reach>=b.reach,engHi=b.ok&&m.eng>=b.eng,clickHi=b.ok&&m.click>=b.click;
+  const won=m.leads>0||m.paid>0;
+  let tone,label,summary;
+  if(won){
+    tone='good';label='Performed well';
+    summary='This post brought '+m.leads+' qualified lead'+(m.leads===1?'':'s')+(m.paid?' and '+m.paid+' paid enrolment'+(m.paid===1?'':'s'):'')+'. Leads and customers are the result that counts most.';
+  }else if(!b.ok){
+    tone='learn';label='Too early to compare';
+    summary='Scoring against your own average needs '+MIN_BASE+' other posts with results on '+p.platform+'. You have '+b.n+'. Until then, here is what these numbers say on their own.';
+  }else{
+    const hi=[reachHi,engHi,clickHi].filter(Boolean).length;
+    if(hi>=2){tone='ok';label='Promising, no leads yet';summary='Reach, reactions or clicks beat your '+p.platform+' average, but nobody turned into a lead yet.'}
+    else if(hi===1){tone='mid';label='Average';summary='One of reach, reactions and clicks beat your '+p.platform+' average. The others fell short.'}
+    else{tone='bad';label='Below your average';summary='Reach, reactions and clicks were all below your '+p.platform+' average.'}
+  }
+  let next='the opening line';
+  if(won){
+    A.push('Repeat this topic and format next week as a short series.');
+    A.push('Post the same message on another platform and compare the result.');
+    A.push('Keep following up the leads from this post. Update the paid count when a student pays.');
+    next='the posting time';
+  }
+  if(m.enq>0&&m.leads===0)A.push('People enquired but no qualified lead is logged yet. Reply to each person today, then enter the qualified ones here.');
+  if(m.clicks>0&&m.enq===0)A.push('People clicked but nobody reached out. Check the WhatsApp or website path: fewer steps, a pre filled WhatsApp message, and a clear first reply.');
+  if(b.ok){
+    if(!reachHi){A.push('Reach was below your '+p.platform+' average. Test a stronger first line or first three seconds, and try a different posting time.');next='the opening line'}
+    else if(!engHi){A.push('Many people saw it but few reacted. The opening worked, the content did not hold them. Add a real student story or one clear tip, and end with a question.');next='the format, for example video instead of an image'}
+    else if(!clickHi){A.push('People reacted but did not click. Use one clear call to action, say it early and again at the end, and put the link or WhatsApp button where it is easy to see.');next='the call to action'}
+  }else if(!won){
+    if(m.inter===0){A.push('Nobody reacted. Rewrite the first line so it speaks to one person, such as a Form Six leaver or a parent.');next='the opening line'}
+    else if(m.clicks===0){A.push('People reacted but nobody clicked. Give one clear next step, say it early and repeat it at the end.');next='the call to action'}
+  }
+  A.push('Next test: change only '+next+' on your next '+p.platform+' post, so you can see what made the difference.');
+  return{tone,label,summary,actions:A,m,b};
+}
+
+/* ---------- views ---------- */
+function planCard(p,late){
+  const link='www.chuolink.com?ref='+p.code;
+  const asking=S.confirmDel===p.id;
+  return '<article class="card'+(late?' overdue':'')+'">'
+   +'<div class="row"><span class="when'+(late?' late':'')+'">'+esc(fmtDate(p.date))+(late?' (overdue)':'')+'</span><span class="chip plat">'+esc(p.platform)+'</span><span class="chip">'+esc(p.pillar)+'</span><span class="chip">'+esc(p.format)+'</span></div>'
+   +'<div class="hook">'+esc(p.hook)+'</div>'
+   +'<div class="small">Call to action: '+esc(p.cta)+'</div>'
+   +(p.caption?'<details class="cap"><summary>Caption</summary><div class="captext">'+esc(p.caption)+'</div><button class="ghost small-btn" data-act="copy" data-v="'+esc(p.caption)+'">Copy caption</button></details>':'')
+   +'<div class="row"><span class="code">'+esc(p.code)+'</span><button class="ghost small-btn" data-act="copy" data-v="'+esc(p.code)+'">Copy code</button><button class="ghost small-btn" data-act="copy" data-v="'+esc(link)+'">Copy link</button></div>'
+   +'<div class="actions"><button class="primary" data-act="posted" data-id="'+p.id+'">Mark as posted</button>'
+   +(asking?'<button class="danger" data-act="delyes" data-id="'+p.id+'">Tap again to delete</button>':'<button class="ghost" data-act="delask" data-id="'+p.id+'">Delete</button>')+'</div></article>';
+}
+function viewPostBase(){
+  const t=todayISO();
+  const planned=S.posts.filter(p=>p.status==='planned').sort((a,b)=>a.date.localeCompare(b.date));
+  const late=planned.filter(p=>p.date<t),now=planned.filter(p=>p.date===t),soon=planned.filter(p=>p.date>t);
+  const waiting=S.posts.filter(p=>p.status==='posted'&&!p.results).length;
+  let h='<div class="strip"><div><b>'+(late.length+now.length)+'</b><span>to post now</span></div><div><b>'+soon.length+'</b><span>coming up</span></div><div><b>'+waiting+'</b><span>need results</span></div></div>';
+  if(S.mode==='local')h+='<div class="banner">Posts are saved on this phone or computer only. Use Back up your posts at the bottom of this tab to move them to another device.</div>';
+  if(!planned.length){
+    h+='<div class="empty"><h2>Nothing planned yet</h2><p class="small">Add what you will post and it appears here by date, with its tracking code ready to copy.</p><button class="primary" data-act="tab" data-v="add">Plan your first post</button></div>';
+    return h;
+  }
+  const sec=(title,list,isLate)=>list.length?'<section class="sec"><div class="sec-h"><h2>'+title+'</h2><span class="n">'+list.length+'</span></div>'+list.map(p=>planCard(p,isLate)).join('')+'</section>':'';
+  return h+sec('Overdue',late,true)+sec('Today',now,false)+sec('Coming up',soon,false);
+}
+function resCard(p){
+  const t=todayISO();
+  let tail='';
+  if(p.results){const v=verdict(p);tail='<span class="pill '+v.tone+'">'+esc(v.label)+'</span>'}
+  else{const d=daysBetween(p.postedAt||p.date,t);tail=d>=2?'<span class="pill ok">Ready for results</span>':'<span class="small">Check insights in '+(2-d)+' day'+(2-d===1?'':'s')+'</span>'}
+  return '<article class="card" data-act="open" data-id="'+p.id+'" style="cursor:pointer">'
+   +'<div class="row"><span class="when">Posted '+esc(fmtDate(p.postedAt||p.date))+'</span><span class="chip plat">'+esc(p.platform)+'</span><span class="chip">'+esc(p.pillar)+'</span></div>'
+   +'<div class="hook">'+esc(p.hook)+'</div><div class="row">'+tail+'</div>'
+   +'<div class="actions"><button class="'+(p.results?'ghost':'primary')+'" data-act="open" data-id="'+p.id+'">'+(p.results?'See verdict':'Enter results')+'</button></div></article>';
+}
+function viewResults(){
+  if(S.detail){const p=S.posts.find(x=>x.id===S.detail);if(p)return viewDetail(p);S.detail=null}
+  const posted=S.posts.filter(p=>p.status==='posted').sort((a,b)=>(b.postedAt||b.date).localeCompare(a.postedAt||a.date));
+  const wait=posted.filter(p=>!p.results),done=posted.filter(p=>p.results);
+  if(!posted.length)return '<div class="empty"><h2>No posted content yet</h2><p class="small">Mark a post as posted on the To post tab. It then waits here for its results, ideally 48 hours later.</p><button class="primary" data-act="tab" data-v="post">Go to To post</button></div>';
+  const sec=(title,list)=>list.length?'<section class="sec"><div class="sec-h"><h2>'+title+'</h2><span class="n">'+list.length+'</span></div>'+list.map(resCard).join('')+'</section>':'';
+  return sec('Waiting for results',wait)+sec('Scored',done);
+}
+function numField(id,label,hint){
+  const v=S.res[id]==null?'':S.res[id];
+  return '<div class="field"><label for="r_'+id+'">'+label+'</label><input id="r_'+id+'" data-r="'+id+'" type="number" inputmode="numeric" min="0" value="'+esc(v)+'" placeholder="0">'+(hint?'<div class="hint">'+hint+'</div>':'')+'</div>';
+}
+function viewDetail(p){
+  let h='<button class="ghost small-btn" data-act="back" style="align-self:flex-start">Back to results</button>';
+  h+='<article class="card"><div class="row"><span class="when">Posted '+esc(fmtDate(p.postedAt||p.date))+'</span><span class="chip plat">'+esc(p.platform)+'</span><span class="chip">'+esc(p.pillar)+'</span><span class="chip">'+esc(p.format)+'</span></div><div class="hook">'+esc(p.hook)+'</div><div class="small">Call to action: '+esc(p.cta)+'</div><div class="row"><span class="code">'+esc(p.code)+'</span></div></article>';
+  h+='<form id="resForm" class="sec" autocomplete="off">'
+   +'<fieldset><legend>Seen</legend>'+numField('reach','Reach','From the platform insights. People who saw the post.')+'</fieldset>'
+   +'<fieldset><legend>Reactions</legend><div class="grid2">'+numField('likes','Likes')+numField('comments','Comments')+numField('shares','Shares')+numField('saves','Saves')+'</div></fieldset>'
+   +'<fieldset><legend>Next step</legend>'+numField('clicks','Link clicks','Clicks on the link, bio link or WhatsApp button.')+'</fieldset>'
+   +'<fieldset><legend>Business result</legend>'+numField('enq','Enquiries','DMs, WhatsApp chats and calls that came because of this post.')+'<div class="grid2">'+numField('leads','Qualified leads','Serious enquirers you can place.')+numField('paid','Paid enrolments')+'</div></fieldset>'
+   +'<button type="submit" class="primary" data-act="saveres">Save and see verdict</button></form>';
+  if(p.results){
+    const v=verdict(p),m=v.m,b=v.b;
+    const row=(l,val,avg,cur,av)=>'<tr><td>'+l+'</td><td>'+val+'</td><td>'+(b.ok?avg:'')+'</td><td>'+(b.ok&&cur!=null?'<span class="pill '+(cur>=av?'good':'bad')+'">'+(cur>=av?'Above':'Below')+'</span>':'')+'</td></tr>';
+    h+='<section class="verdict '+v.tone+'" id="verdict"><span class="pill '+v.tone+'" style="align-self:flex-start">'+esc(v.label)+'</span><h3>'+esc(v.summary)+'</h3>'
+     +'<div class="scroll"><table class="cmp"><tr><th>Measure</th><th>This post</th><th>'+(b.ok?'Your '+esc(p.platform)+' average':'')+'</th><th></th></tr>'
+     +row('Reach',num(m.reach),b.ok?num(b.reach):'',m.reach,b.reach)
+     +row('Reaction rate',pct(m.eng),b.ok?pct(b.eng):'',m.eng,b.eng)
+     +row('Click rate',pct(m.click),b.ok?pct(b.click):'',m.click,b.click)
+     +row('Enquiries per 1,000 reach',(m.enqRate*1000).toFixed(1),b.ok?(b.enqRate*1000).toFixed(1):'',m.enqRate,b.enqRate)
+     +'</table></div>'
+     +(b.ok?'<div class="small">Average of your '+b.n+' other scored '+esc(p.platform)+' posts.</div>':'')
+     +(v.actions.length?'<div><b>What to do next</b></div><ul>'+v.actions.map(a=>'<li>'+esc(a)+'</li>').join('')+'</ul>':'')+'</section>';
+  }
+  return h;
+}
+function viewAdd(){
+  const d=S.draft;if(!d.date)d.date=todayISO();
+  const opts=(arr,sel,get)=>arr.map(x=>{const v=get?get(x):x;return '<option'+(v===sel?' selected':'')+'>'+esc(v)+'</option>'}).join('');
+  const code=makeCode(d,null);
+  return '<form id="addForm" class="sec" autocomplete="off">'
+   +'<div class="field"><label for="d_date">Date to post</label><input id="d_date" data-d="date" type="date" value="'+esc(d.date)+'"></div>'
+   +'<div class="grid2"><div class="field"><label for="d_platform">Platform</label><select id="d_platform" data-d="platform">'+opts(PLATFORMS,d.platform,x=>x[0])+'</select></div>'
+   +'<div class="field"><label for="d_pillar">Pillar</label><select id="d_pillar" data-d="pillar">'+opts(PILLARS,d.pillar,x=>x[0])+'</select></div></div>'
+   +'<div class="grid2"><div class="field"><label for="d_format">Format</label><select id="d_format" data-d="format">'+opts(FORMATS,d.format)+'</select></div>'
+   +'<div class="field"><label for="d_cta">Call to action</label><select id="d_cta" data-d="cta">'+opts(CTAS,d.cta)+'</select></div></div>'
+   +'<div class="field"><label for="d_hook">What is the post about?</label><textarea id="d_hook" data-d="hook" placeholder="What is the post about, and what is the first line?">'+esc(d.hook)+'</textarea>'
+   +'<div class="hint">Ideas for '+esc(d.pillar)+' (tap to use):</div><div class="ideas" id="ideas">'+(IDEAS[d.pillar]||[]).map((t,i)=>'<button type="button" data-act="idea" data-i="'+i+'">'+esc(t)+'</button>').join('')+'</div></div>'
+   +'<fieldset><legend>Caption</legend>'
+   +'<div class="grid2"><div class="field"><label for="d_tone">Tone</label><select id="d_tone" data-d="tone">'+opts(['Friendly','Professional','Urgent','Inspiring'],d.tone)+'</select></div>'
+   +'<div class="field"><label for="d_lang">Language</label><select id="d_lang" data-d="lang">'+opts(['English','Kiswahili','English then Kiswahili'],d.lang)+'</select></div></div>'
+   +(sampleFn?'<div class="actions">'+(S.gen.busy?'<button type="button" class="danger" data-act="stopgen">Stop</button>':'<button type="button" class="primary" data-act="gen">'+(d.caption?'Write another caption':'Write caption from my description')+'</button>')+'</div>':'<div class="hint">Caption writing is not available in this view. Type or paste your own caption below.</div>')
+   +(S.gen.busy&&!S.gen.got?'<div class="small">Thinking...</div>':'')
+   +(S.gen.err?'<div class="banner">'+esc(S.gen.err)+'</div>':'')
+   +'<div class="field"><label for="d_caption">Caption (edit freely)</label><textarea id="d_caption" data-d="caption" style="min-height:190px" placeholder="Describe the post above, then tap Write caption. Or paste your own.">'+esc(d.caption)+'</textarea>'
+   +'<div class="hint">Replace anything in [square brackets] with the real detail before you post.</div></div>'
+   +(d.caption?'<div class="actions"><button type="button" class="ghost" data-act="copycap">Copy caption</button></div>':'')
+   +'</fieldset>'
+   +'<div class="small">Tracking code: <span class="code" id="codePrev">'+esc(code)+'</span></div>'
+   +'<button type="submit" class="primary" data-act="savepost">Add to plan</button></form>';
+}
+function groupBy(list,key){const g={};list.forEach(p=>{(g[p[key]]=g[p[key]]||[]).push(p)});return g}
+function agg(list){
+  const ms=list.map(p=>metrics(p.results));
+  const n=ms.length;const sum=k=>ms.reduce((a,m)=>a+m[k],0);
+  return{n,clicks:sum('clicks'),reach:n?sum('reach')/n:0,eng:n?ms.reduce((a,m)=>a+m.eng,0)/n:0,enq:sum('enq'),leads:sum('leads'),paid:sum('paid'),lpp:n?sum('leads')/n:0};
+}
+function viewInsights(){
+  const scored=S.posts.filter(p=>p.results&&metrics(p.results).reach>0);
+  const planned=S.posts.length,posted=S.posts.filter(p=>p.status==='posted').length;
+  let h='<div class="strip"><div><b>'+planned+'</b><span>posts planned</span></div><div><b>'+posted+'</b><span>posted</span></div><div><b>'+scored.length+'</b><span>scored</span></div></div>';
+  if(!scored.length)return h+'<div class="empty"><h2>Insights appear after your first results</h2><p class="small">Enter results for a posted piece and this page shows which platform and pillar brings reactions, enquiries and leads.</p><button class="primary" data-act="tab" data-v="results">Go to Results</button></div>';
+  const tot=agg(scored);
+  h+='<div class="strip"><div><b>'+tot.enq+'</b><span>enquiries</span></div><div><b>'+tot.leads+'</b><span>qualified leads</span></div><div><b>'+tot.paid+'</b><span>paid enrolments</span></div></div>';
+  if(scored.length<5)h+='<div class="banner">Early numbers from '+scored.length+' scored post'+(scored.length===1?'':'s')+'. Treat them as hints until you have more.</div>';
+  const tbl=(title,key,names)=>{
+    const g=groupBy(scored,key);
+    const rows=names.filter(n=>g[n]).map(n=>({n,a:agg(g[n])}));
+    return '<section class="sec"><h2>'+title+'</h2><div class="scroll"><table class="cmp"><tr><th>'+(key==='platform'?'Platform':'Pillar')+'</th><th>Posts</th><th>Avg reach</th><th>Reaction rate</th><th>Enquiries</th><th>Leads</th></tr>'
+     +rows.map(r=>'<tr><td><b>'+esc(r.n)+'</b></td><td>'+r.a.n+'</td><td>'+num(r.a.reach)+'</td><td>'+pct(r.a.eng)+'</td><td>'+r.a.enq+'</td><td>'+r.a.leads+'</td></tr>').join('')+'</table></div></section>';
+  };
+  h+=chartsHtml(scored)+'<h2>The numbers</h2>'+tbl('By platform','platform',PLATFORMS.map(x=>x[0]))+tbl('By pillar','pillar',PILLARS.map(x=>x[0]));
+  const gp=groupBy(scored,'pillar'),pr=Object.keys(gp).map(k=>({k,a:agg(gp[k])}));
+  const tips=[];
+  const bestL=pr.filter(x=>x.a.leads>0).sort((a,b)=>b.a.lpp-a.a.lpp)[0];
+  if(bestL)tips.push('Most leads per post so far: '+bestL.k+' ('+bestL.a.lpp.toFixed(1)+'). Plan more of it next week.');
+  else tips.push('No leads are traced to posts yet. Check that every enquiry is logged with the post\'s tracking code, and that each post has a clear call to action.');
+  const comp=pr.filter(x=>x.a.n>=2).sort((a,b)=>a.a.eng-b.a.eng)[0];
+  if(comp&&pr.length>1)tips.push('Lowest reaction rate: '+comp.k+' ('+pct(comp.a.eng)+'). Try a new hook or format on it before dropping it.');
+  const gq=groupBy(scored,'platform'),pq=Object.keys(gq).map(k=>({k,a:agg(gq[k])})).filter(x=>x.a.enq>0).sort((a,b)=>b.a.enq-a.a.enq)[0];
+  if(pq)tips.push('Most enquiries so far: '+pq.k+' ('+pq.a.enq+'). Keep this platform in every week\'s plan.');
+  h+='<section class="verdict"><h3>What to do with this</h3><ul>'+tips.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul></section>';
+  return h;
+}
+
+/* ---------- charts ---------- */
+const MEAS={
+  rate:{n:'Reaction rate',f:pct,get:a=>a.eng},
+  enq:{n:'Enquiries',f:v=>String(Math.round(v)),get:a=>a.enq},
+  leads:{n:'Qualified leads',f:v=>String(Math.round(v)),get:a=>a.leads}
+};
+function niceMax(v){if(!(v>0))return 1;const p=Math.pow(10,Math.floor(Math.log10(v))),f=v/p;return(f<=1?1:f<=2?2:f<=5?5:10)*p}
+function trunc(s,n){s=String(s);return s.length>n?s.slice(0,n-1)+'…':s}
+function barPath(x,y,w,h){
+  const r=Math.min(4,w/2,h/2);
+  return 'M'+x+','+y+'h'+(w-r)+'a'+r+','+r+' 0 0 1 '+r+','+r+'v'+(h-2*r)+'a'+r+','+r+' 0 0 1 '+(-r)+','+r+'h'+(-(w-r))+'z';
+}
+function hbars(rows,fmt,label){
+  const W=340,L=108,R=70,RH=32,TH=16,H=rows.length*RH+2;
+  const max=Math.max.apply(null,rows.map(r=>r.value).concat([0]));
+  const sc=max>0?(W-L-R)/max:0;
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(label)+'"><line class="gridl" x1="'+L+'" x2="'+L+'" y1="0" y2="'+H+'"/>';
+  rows.forEach((r,i)=>{
+    const y=i*RH+(RH-TH)/2+1,w=r.value>0?Math.max(r.value*sc,3):0,ty=y+TH/2+4;
+    s+='<g class="brow"><text class="ax" x="0" y="'+ty+'">'+esc(trunc(r.label,17))+'</text>';
+    if(w>0)s+='<path class="bar" d="'+barPath(L,y,w,TH)+'"/>';
+    s+='<text class="val" x="'+(L+w+6)+'" y="'+ty+'">'+esc(fmt(r.value))+'</text>';
+    s+='<rect class="hit" x="0" y="'+(i*RH)+'" width="'+W+'" height="'+RH+'" tabindex="0" data-tv="'+esc(fmt(r.value))+'" data-tl="'+esc(r.label+': '+r.tip)+'"/></g>';
+  });
+  return s+'</svg>';
+}
+function lineChart(pts,fmt,tickF,label){
+  const W=340,H=190,L=42,R=24,T=18,B=28;
+  const maxv=niceMax(Math.max.apply(null,pts.map(p=>p.v).concat([0])));
+  const X=i=>pts.length===1?(L+W-R)/2:L+i*(W-L-R)/(pts.length-1);
+  const Y=v=>T+(H-T-B)*(1-v/maxv);
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(label)+'">';
+  [0,.5,1].forEach(f=>{const y=Y(maxv*f).toFixed(1);s+='<line class="gridl" x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'"/><text class="ax" x="'+(L-6)+'" y="'+(+y+4)+'" text-anchor="end">'+esc(tickF(maxv*f))+'</text>'});
+  if(pts.length>1)s+='<path class="line" d="'+pts.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+','+Y(p.v).toFixed(1)).join('')+'"/>';
+  pts.forEach((p,i)=>{
+    const last=i===pts.length-1,cx=X(i).toFixed(1),cy=Y(p.v).toFixed(1);
+    if(pts.length<=14||last)s+='<circle class="dot" cx="'+cx+'" cy="'+cy+'" r="5"/>';
+    s+='<circle class="hit" cx="'+cx+'" cy="'+cy+'" r="14" tabindex="0" data-tv="'+esc(fmt(p.v))+'" data-tl="'+esc(p.tip)+'"/>';
+  });
+  const lp=pts[pts.length-1];
+  s+='<text class="val" x="'+X(pts.length-1).toFixed(1)+'" y="'+(Y(lp.v)-10).toFixed(1)+'" text-anchor="end">'+esc(fmt(lp.v))+'</text>';
+  s+='<text class="ax" x="'+L+'" y="'+(H-8)+'">'+esc(pts[0].date)+'</text>';
+  if(pts.length>1)s+='<text class="ax" x="'+(W-R)+'" y="'+(H-8)+'" text-anchor="end">'+esc(lp.date)+'</text>';
+  return s+'</svg>';
+}
+function chartsHtml(scored){
+  const M=MEAS[S.measure],tot=agg(scored),n0=scored.length;
+  const steps=[['Link clicks',tot.clicks],['Enquiries',tot.enq],['Qualified leads',tot.leads],['Paid enrolments',tot.paid]];
+  const intf=v=>num(v);
+  const frows=steps.map((s,i)=>({label:s[0],value:s[1],tip:i===0?('from '+n0+' scored post'+(n0===1?'':'s')):(steps[i-1][1]>0?pct(s[1]/steps[i-1][1])+' of '+steps[i-1][0].toLowerCase():'no '+steps[i-1][0].toLowerCase()+' to compare with')}));
+  let drop='';
+  if(tot.clicks===0)drop='No link clicks are recorded yet. Put the tracking link or the WhatsApp button on every post, then enter the clicks.';
+  else{
+    let worst=null;
+    for(let i=1;i<steps.length;i++){if(steps[i-1][1]>0){const c=steps[i][1]/steps[i-1][1];if(!worst||c<worst.c)worst={c,i}}}
+    if(worst){
+      const adv=['Check the WhatsApp or website path: fewer steps and a quick first reply.','Reply faster and ask better qualifying questions so more enquirers become real leads.','Talk to admissions about what stops leads from paying, such as fees or documents.'][worst.i-1];
+      drop='Biggest drop: '+steps[worst.i-1][0].toLowerCase()+' to '+steps[worst.i][0].toLowerCase()+' ('+pct(worst.c)+' continue). '+adv;
+    }
+  }
+  const grp=key=>{const g=groupBy(scored,key),names=key==='platform'?PLATFORMS.map(x=>x[0]):PILLARS.map(x=>x[0]);
+    return names.filter(k=>g[k]).map(k=>({label:k,value:M.get(agg(g[k])),tip:g[k].length+' scored post'+(g[k].length===1?'':'s')})).sort((a,b)=>b.value-a.value)};
+  const barBlock=(title,key)=>{
+    const rows=grp(key);
+    const none=rows.every(r=>!(r.value>0));
+    return '<section class="chartcard"><h3>'+esc(M.n)+' by '+key+'</h3>'+(none?'<p>Nothing recorded for this measure yet.</p>':'')+hbars(rows,M.f,M.n+' by '+key)+'</section>';
+  };
+  const ordered=scored.slice().sort((a,b)=>(a.postedAt||a.date).localeCompare(b.postedAt||b.date));
+  const pts=ordered.map(p=>{const m=metrics(p.results),v=S.measure==='rate'?m.eng:S.measure==='enq'?m.enq:m.leads;const d=p.postedAt||p.date;
+    return{v,date:parse(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'}),tip:p.platform+', '+p.pillar+', posted '+fmtDate(d)}});
+  const tickF=v=>S.measure==='rate'?(v*100).toFixed(v*100<10?1:0)+'%':String(Math.round(v*10)/10);
+  let h='<section class="chartcard"><h3>From click to customer</h3><p>All scored posts. Each bar is how many people reached that step.</p>'+hbars(frows,intf,'Funnel from link clicks to paid enrolments')+(drop?'<p><b>'+esc(drop)+'</b></p>':'')+'</section>';
+  h+='<div class="chips" role="group" aria-label="Measure for the charts below"><span class="small">Show</span>'+Object.keys(MEAS).map(k=>'<button type="button" class="chip-btn'+(S.measure===k?' on':'')+'" data-act="measure" data-v="'+k+'" aria-pressed="'+(S.measure===k)+'">'+MEAS[k].n+'</button>').join('')+'</div>';
+  h+=barBlock('platform','platform')+barBlock('pillar','pillar');
+  h+='<section class="chartcard"><h3>'+esc(M.n)+' per post over time</h3><p>One point for each scored post, oldest to newest. Tap a point for its details.</p>'+lineChart(pts,M.f,tickF,M.n+' per post over time')+'</section>';
+  return h;
+}
+
+/* ---------- caption writer ---------- */
+let genCtl=null;
+function capPrompt(d){
+  const code=makeCode(d,null),link='www.chuolink.com?ref='+code;
+  const rules={
+    Instagram:'Instagram caption. The first line must stop the scroll because only it shows before "more". Short lines with blank lines between them. Links are not clickable, so say "link in bio" or "send us a DM". Finish with 6 to 8 relevant hashtags on their own line.',
+    TikTok:'TikTok caption. Keep the text under 150 characters, then add 3 to 5 hashtags.',
+    Facebook:'Facebook post. Friendly, 3 to 6 short paragraphs, one clear call to action, and the full link on its own line. At most 3 hashtags.',
+    WhatsApp:'WhatsApp Status or Channel message. Very short and direct, easy to reply to, include the number 0785 459 479. No hashtags.',
+    LinkedIn:'LinkedIn post. Professional and credible, short paragraphs, at most 3 hashtags, and the link on its own line.',
+    YouTube:'YouTube description. The first two lines carry the hook and the call to action, then a few lines of detail and the link, then 3 hashtags.'
+  };
+  return [
+    'You write social media captions for ChuoLink (Africa Chuolink Limited), an AI powered university placement and career guidance company in Dar es Salaam, Tanzania. ChuoLink places Tanzanian students in universities in India, Malaysia, China, Turkey, Cyprus, the UAE and Europe, and guides applicants to all 49 accredited Tanzanian universities. It is licensed by TCU. Office: Victoria House, 9th Floor, Bagamoyo Road, Dar es Salaam. Website: www.chuolink.com. Phone and WhatsApp: 0785 459 479.',
+    '',
+    'Write ONE caption that is ready to post.',
+    'Platform: '+d.platform+'. '+(rules[d.platform]||''),
+    'Content pillar: '+d.pillar+'. Format of the post: '+d.format+'.',
+    'Call to action to use: '+d.cta+'. Tracking link, if a link fits the platform: '+link,
+    'Tone: '+d.tone+'. Language: '+d.lang+(d.lang==='Kiswahili'||d.lang==='English then Kiswahili'?' (natural, simple Tanzanian Kiswahili).':'.'),
+    'Audience: Form Six leavers, university applicants and their parents. Goal: make the right person send an enquiry.',
+    '',
+    'What the post is about, in the words of the person posting:',
+    d.hook.trim(),
+    '',
+    'Rules:',
+    '1. Open with a first line that speaks to one specific person and gives a reason to keep reading.',
+    '2. Use only the facts given above. If an important detail is missing, such as a date, fee, deadline or student name, write it in square brackets like [deadline date] for the poster to fill in.',
+    '3. Never invent scholarships, prices, guarantees, results or testimonials. Never promise admission or a visa.',
+    '4. End with one clear call to action, written as a single next step.',
+    '5. Do not use hyphens or dashes anywhere. Write ranges and joined words with "to" or a space.',
+    '6. Use at most 3 emojis, and none if the tone is Professional.',
+    '7. Return only the caption text, ready to paste. No title, no notes, no quotation marks around it.'
+  ].join('\n');
+}
+function capError(code){
+  return({not_granted:'Caption writing needs your permission to use Claude on this page. Reload the page and allow it.',
+    rate_limited:'Too many requests just now. Wait a minute, then try again.',
+    sampling_disabled:'Claude is not available for this account.',
+    session_expired:'Your session expired. Sign in again and reload the page.'})[code]||'The caption could not be written. Try again.';
+}
+async function genCaption(){
+  const d=S.draft;
+  if(!d.hook.trim()){toast('Describe the post first');return}
+  if(!sampleFn){toast('Caption writing is not available here');return}
+  genCtl=new AbortController();S.gen={busy:true,err:'',got:false};render();
+  try{
+    await sampleFn(capPrompt(d),{signal:genCtl.signal,cache:false,onText:u=>{S.gen.got=true;S.draft.caption=u.text;const el=$('#d_caption');if(el)el.value=u.text}});
+    S.gen={busy:false,err:'',got:true};
+  }catch(e){
+    if(e&&e.text){S.draft.caption=e.text}
+    S.gen={busy:false,err:e&&e.code==='cancelled'?'':capError(e&&e.code),got:true};
+  }
+  genCtl=null;render();
+}
+
+/* ---------- tooltip ---------- */
+function showTip(h,x,y){
+  const t=$('#tip');t.textContent='';
+  const b=document.createElement('b');b.textContent=h.getAttribute('data-tv');
+  const s=document.createElement('span');s.textContent=h.getAttribute('data-tl')||'';
+  t.appendChild(b);t.appendChild(s);t.classList.add('show');
+  const w=t.offsetWidth,ht=t.offsetHeight;
+  let left=Math.min(Math.max(8,x-w/2),window.innerWidth-w-8),top=y-ht-14;if(top<8)top=y+18;
+  t.style.left=left+'px';t.style.top=top+'px';
+}
+function hideTip(){$('#tip').classList.remove('show')}
+document.addEventListener('pointerover',e=>{const h=e.target.closest&&e.target.closest('[data-tv]');if(h)showTip(h,e.clientX,e.clientY);else hideTip()});
+document.addEventListener('pointermove',e=>{const h=e.target.closest&&e.target.closest('[data-tv]');if(h)showTip(h,e.clientX,e.clientY)});
+document.addEventListener('focusin',e=>{const h=e.target.closest&&e.target.closest('[data-tv]');if(h){const r=h.getBoundingClientRect();showTip(h,r.left+r.width/2,r.top)}});
+document.addEventListener('focusout',e=>{if(e.target.closest&&e.target.closest('[data-tv]'))hideTip()});
+window.addEventListener('scroll',hideTip,{passive:true});
+
+
+/* ---------- backup (standalone copy) ---------- */
+function viewPost(){return viewPostBase()+backupCard()}
+function backupCard(){
+  return '<section class="chartcard"><h3>Back up your posts</h3><p>Posts live in this browser only. Download a backup every week, and use it to move your posts to another phone or computer.</p>'
+   +'<div class="actions"><button type="button" class="primary" data-act="export">Download backup</button><button type="button" class="ghost" data-act="import">Restore from backup</button></div>'
+   +'<input type="file" id="impFile" accept="application/json,.json" hidden></section>';
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  if(b.dataset.act==='export'){
+    const blob=new Blob([JSON.stringify({app:'chuolink-content-desk',version:1,posts:S.posts},null,1)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='content-desk-backup-'+todayISO()+'.json';
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('Backup downloaded');
+  }
+  if(b.dataset.act==='import'){const f=$('#impFile');if(f)f.click()}
+});
+document.addEventListener('change',async e=>{
+  if(e.target.id!=='impFile')return;
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const j=JSON.parse(await f.text()),list=Array.isArray(j.posts)?j.posts:[];let n=0;
+    for(const p of list){
+      if(p&&typeof p.id==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(p.date||'')&&['planned','posted'].includes(p.status)&&typeof p.platform==='string'){await savePost(p);n++}
+    }
+    toast('Restored '+n+' post'+(n===1?'':'s'));render();
+  }catch(err){toast('That file could not be read')}
+  e.target.value='';
+});
+
+/* ---------- render ---------- */
+const ICONS={
+  post:'<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>',
+  results:'<svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>',
+  add:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
+  insights:'<svg viewBox="0 0 24 24"><path d="M4 17l5-5 4 4 7-8"/><path d="M15 8h5v5"/></svg>'
+};
+function isTyping(){const a=document.activeElement;return a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)}
+var rt=null;
+function requestRender(){if(isTyping()){S.pending=true;return}clearTimeout(rt);rt=setTimeout(render,0)}
+function render(){
+  S.pending=false;
+  const t=todayISO();
+  $('#today').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const due=S.posts.filter(p=>p.status==='planned'&&p.date<=t).length;
+  const waiting=S.posts.filter(p=>p.status==='posted'&&!p.results&&daysBetween(p.postedAt||p.date,t)>=2).length;
+  const tabs=[['post','To post',due],['results','Results',waiting],['add','Add post',0],['insights','Insights',0]];
+  $('#nav').innerHTML=tabs.map(x=>'<button data-act="tab" data-v="'+x[0]+'" class="'+(S.tab===x[0]?'on':'')+'" aria-label="'+x[1]+'">'+ICONS[x[0]==='post'?'post':x[0]]+'<span>'+x[1]+'</span>'+(x[2]?'<span class="badge">'+x[2]+'</span>':'')+'</button>').join('');
+  const v={post:viewPost,results:viewResults,add:viewAdd,insights:viewInsights}[S.tab];
+  $('#main').innerHTML=S.mode==='loading'?'<div class="small">Loading your posts...</div>':v();
+}
+function go(tab){S.tab=tab;S.detail=null;S.confirmDel=null;render();window.scrollTo(0,0)}
+
+/* ---------- events ---------- */
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const act=b.dataset.act,id=b.dataset.id;
+  if(act==='saveres'||act==='savepost')return; /* handled by submit */
+  if(act==='tab'){go(b.dataset.v);return}
+  if(act==='copy'){copyText(b.dataset.v);return}
+  if(act==='back'){S.detail=null;render();return}
+  if(act==='open'){
+    const p=S.posts.find(x=>x.id===id);if(!p)return;
+    S.detail=id;S.res=Object.assign({},p.results||{});render();window.scrollTo(0,0);return;
+  }
+  if(act==='delask'){S.confirmDel=id;render();return}
+  if(act==='delyes'){S.confirmDel=null;if(await removePost(id))toast('Deleted');render();return}
+  if(act==='posted'){
+    const p=S.posts.find(x=>x.id===id);if(!p)return;
+    const q=Object.assign({},p,{status:'posted',postedAt:todayISO()});
+    if(await savePost(q)){toast('Marked as posted. Add results in 2 days.');render()}return;
+  }
+  if(act==='measure'){S.measure=b.dataset.v;render();return}
+  if(act==='gen'){genCaption();return}
+  if(act==='stopgen'){if(genCtl)genCtl.abort();return}
+  if(act==='copycap'){copyText(S.draft.caption||'');return}
+  if(act==='idea'){
+    const list=IDEAS[S.draft.pillar]||[];S.draft.hook=list[+b.dataset.i]||'';render();return;
+  }
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.d){
+    S.draft[t.dataset.d]=t.value;
+    if(t.dataset.d==='pillar'){render();return}
+    const c=$('#codePrev');if(c)c.textContent=makeCode(S.draft,null);
+  }
+  if(t.dataset.r)S.res[t.dataset.r]=t.value;
+});
+document.addEventListener('focusout',()=>{setTimeout(()=>{if(S.pending&&!isTyping())render()},150)});
+document.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(e.target.id==='addForm'){
+    const d=S.draft;
+    if(!d.hook.trim()){toast('Write the topic or opening line first');return}
+    if(!d.date){toast('Choose a date');return}
+    const p={id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:d.date,platform:d.platform,pillar:d.pillar,format:d.format,hook:d.hook.trim(),cta:d.cta,code:makeCode(d,null),status:'planned',caption:d.caption||'',createdAt:new Date().toISOString()};
+    if(await savePost(p)){S.draft.hook='';S.draft.caption='';S.gen={busy:false,err:'',got:false};toast('Added to your plan');go('post')}
+  }
+  if(e.target.id==='resForm'){
+    const p=S.posts.find(x=>x.id===S.detail);if(!p)return;
+    const r={};['reach','likes','comments','shares','saves','clicks','enq','leads','paid'].forEach(k=>{r[k]=Math.max(0,parseInt(S.res[k])||0)});
+    if(r.leads>r.enq&&r.enq>0)toast('Leads are more than enquiries. Check the numbers.');
+    const q=Object.assign({},p,{results:r,resultsAt:new Date().toISOString()});
+    if(await savePost(q)){S.res=Object.assign({},r);if(document.activeElement)document.activeElement.blur();render();const v=$('#verdict');if(v)v.scrollIntoView({behavior:'smooth',block:'start'})}
+  }
+});
+render();
+</script>
+</body>
+</html>
